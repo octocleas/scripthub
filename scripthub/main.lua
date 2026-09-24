@@ -7,9 +7,8 @@ local GITHUB_USER = "octocleas"
 local REPO_NAME = "scripthub"
 local BRANCH = "main"
 
--- If your 'games' folder is inside a subfolder named 'scripthub', change this to:
--- string.format("https://raw.githubusercontent.com/%s/%s/%s/scripthub/games/", GITHUB_USER, REPO_NAME, BRANCH)
-local BASE_URL = string.format("https://raw.githubusercontent.com/%s/%s/%s/games/", GITHUB_USER, REPO_NAME, BRANCH)
+-- Path includes the nested 'scripthub' subfolder
+local BASE_URL = string.format("https://raw.githubusercontent.com/%s/%s/%s/scripthub/games/", GITHUB_USER, REPO_NAME, BRANCH)
 
 -- Map Place IDs to script file names inside your 'games' folder
 local SupportedGames = {
@@ -27,14 +26,13 @@ if scriptName then
     local success, err = pcall(function()
         local code = game:HttpGet(scriptUrl)
         
-        -- Check if GitHub returned a 404 page instead of code
         if code == "404: Not Found" then
-            error("HTTP 404 - File not found at URL: " .. scriptUrl)
+            error("HTTP 404 - File not found at: " .. scriptUrl)
         end
 
         local compiledFunc, syntaxError = loadstring(code)
         if not compiledFunc then
-            error("Compile Error in game script: " .. tostring(syntaxError))
+            error("Compile Error: " .. tostring(syntaxError))
         end
 
         compiledFunc()
