@@ -1,42 +1,46 @@
--- ==========================================
---        UNIVERSAL SCRIPT HUB ROUTER        
--- ==========================================
+-- Services
+local TeleportService = game:GetService("TeleportService")
+local Players = game:GetService("Players")
 
-local currentPlaceId = game.PlaceId
+-- Configuration: Set your GitHub repository details here
+local GITHUB_USER = "YourGitHubUsername" -- Replace with your actual GitHub username
+local REPO_NAME = "scripthub"
+local BRANCH = "main"
 
--- 1. BASE CONFIGURATION
--- FIXED: This now points straight to your actual repository's games folder
-local githubRepo = "https://githubusercontent.com"
+local BASE_URL = string.format("https://raw.githubusercontent.com/%s/%s/%s/games/", GITHUB_USER, REPO_NAME, BRANCH)
 
--- 2. SECURE LOADING FUNCTION (Prevents the hub from crashing if the internet/GitHub fails)
-local function loadGameScript(fileName)
-    local url = githubRepo .. fileName
-    local success, scriptContent = pcall(function()
-        return game:HttpGet(url)
-    end)
-    
-    if success and scriptContent then
-        local loadedScript, err = loadstring(scriptContent)
-        if loadedScript then
-            loadedScript() -- Executes the script
-        else
-            warn("Failed to compile script: " .. tostring(err))
-        end
-    else
-        warn("Failed to fetch script from GitHub URL: " .. url)
-    end
+-- Map Place IDs to script file names inside your 'games' folder
+local SupportedGames = {
+    [87606058429594] = "guess the word.lua",
+}
+
+-- Rayfield Notification Helper
+local function notifyUser(title, content)
+    local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
+    Rayfield:Notify({
+        Title = title,
+        Content = content,
+        Duration = 5,
+        Image = 4483362458
+    })
 end
 
--- 3. GAME ROUTING LOGIC
-if currentPlaceId == 87606058429594 then
-    -- Replaces spaces with '%20' so the URL web request works perfectly
-    loadGameScript("guess%20the%20word.lua")
-    
--- You can add more games in the future by adding elseif blocks like this:
--- elseif currentPlaceId == SECOND_GAME_ID then
---     loadGameScript("another_game.lua")
+-- Execution Logic
+local currentPlaceId = game.PlaceId
+local scriptName = SupportedGames[currentPlaceId]
 
+if scriptName then
+    local formattedFileName = string.gsub(scriptName, " ", "%%20")
+    local scriptUrl = BASE_URL .. formattedFileName
+
+    local success, err = pcall(function()
+        loadstring(game:HttpGet(scriptUrl))()
+    end)
+
+    if not success then
+        warn("[ScriptHub] Failed to execute game script: " .. tostring(err))
+        notifyUser("Error Loading Script", "Failed to fetch script for this game.")
+    end
 else
-    -- Fallback message if executed in an unsupported place
-    warn("Script Hub Error: This game is not supported yet!")
+    notifyUser("ScriptHub", "This game is currently not supported.")
 end
