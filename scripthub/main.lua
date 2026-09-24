@@ -2,28 +2,19 @@
 local TeleportService = game:GetService("TeleportService")
 local Players = game:GetService("Players")
 
--- Configuration: Set your GitHub repository details here
-local GITHUB_USER = "YourGitHubUsername" -- Replace with your actual GitHub username
+-- Configuration
+local GITHUB_USER = "octocleas"
 local REPO_NAME = "scripthub"
 local BRANCH = "main"
 
+-- If your 'games' folder is inside a subfolder named 'scripthub', change this to:
+-- string.format("https://raw.githubusercontent.com/%s/%s/%s/scripthub/games/", GITHUB_USER, REPO_NAME, BRANCH)
 local BASE_URL = string.format("https://raw.githubusercontent.com/%s/%s/%s/games/", GITHUB_USER, REPO_NAME, BRANCH)
 
 -- Map Place IDs to script file names inside your 'games' folder
 local SupportedGames = {
     [87606058429594] = "guess the word.lua",
 }
-
--- Rayfield Notification Helper
-local function notifyUser(title, content)
-    local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
-    Rayfield:Notify({
-        Title = title,
-        Content = content,
-        Duration = 5,
-        Image = 4483362458
-    })
-end
 
 -- Execution Logic
 local currentPlaceId = game.PlaceId
@@ -34,13 +25,24 @@ if scriptName then
     local scriptUrl = BASE_URL .. formattedFileName
 
     local success, err = pcall(function()
-        loadstring(game:HttpGet(scriptUrl))()
+        local code = game:HttpGet(scriptUrl)
+        
+        -- Check if GitHub returned a 404 page instead of code
+        if code == "404: Not Found" then
+            error("HTTP 404 - File not found at URL: " .. scriptUrl)
+        end
+
+        local compiledFunc, syntaxError = loadstring(code)
+        if not compiledFunc then
+            error("Compile Error in game script: " .. tostring(syntaxError))
+        end
+
+        compiledFunc()
     end)
 
     if not success then
         warn("[ScriptHub] Failed to execute game script: " .. tostring(err))
-        notifyUser("Error Loading Script", "Failed to fetch script for this game.")
     end
 else
-    notifyUser("ScriptHub", "This game is currently not supported.")
+    warn("[ScriptHub] Place ID " .. tostring(currentPlaceId) .. " is not supported.")
 end
